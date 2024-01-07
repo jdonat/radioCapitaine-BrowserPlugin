@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clear Cache Add-on</title>
+  <script type="module" src="popup.js"></script>
+  <style>
+    select {
+      color: black;
+    }
+  </style>
+</head>
+<body>
+  <button id="GoToRadioCapitaine">GoToRadioCapitaine</button>
+  <select name="season" id="select-season">
+    <option value="">--Please choose a season</option>
+  </select>
+  <select name="episode" id="select-episode">
+    <option value="">--Please choose an episode</option>
+  </select>
+  <select name="playmode" id="select-playmode">
+    <option value="">--Please choose a play mode</option>
+    <option value="incremental">From past to futur</option>
+    <option value="decremental">From futur to past</option>
+  </select>
+  <button id="Play">Play!</button>
+</body>
+</html>

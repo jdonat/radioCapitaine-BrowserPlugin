@@ -1,0 +1,35 @@
+{
+    "manifest_version": 2,
+    "name": "RadioCapitaine",
+    "version": "1.0",
+    "description": "Listen to your favorite tune",
+    "content_scripts": [
+        {
+          "matches": ["https://www.radiocapitaine.com/*"],
+          "js": ["content.js"]
+        }],
+    "permissions": [
+        "webRequest",
+        "activeTab",
+        "tabs"
+    ],
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "j.donatmagnin@it-students.fr",
+            "strict_min_version": "1.0"
+        }
+    },
+    "browser_action": {
+        "default_icon": "icons/icon.png",
+        "default_popup": "popup.html"
+    },
+    "icons": {
+        "48": "icons/icon.png"
+    },
+    "background": {
+        "scripts": [
+            "background.js"
+        ],
+        "persistent": false
+    }
+}
