@@ -1,20 +1,66 @@
-//popup.js
-document.getElementById('GoToRadioCapitaine').addEventListener('click', function() {
+let current;
+let maxi;
+let mini;
+document.getElementById('GoToRadioCapitaine').addEventListener('click', function () {
   browser.runtime.sendMessage({ action: 'GoToRadioCapitaine' });
   window.close();
 });
-document.getElementById('Play').addEventListener('click', function() {
-  browser.runtime.sendMessage({ action: 'Play' });
-});
 
-document.getElementById('select-season').addEventListener('change', async function () {
-  var selectedValue = event.target.value;
+function displayMenu(menu) {
+  let menuSeason = document.getElementById('select-season');
+
+  menu.forEach(function (menuItem) {
+    let option = document.createElement('option');
+    option.value = menuItem['data-saison-id'];
+    option.textContent = menuItem['data-saison-id'];
+    menuSeason.appendChild(option);
+  });
+}
+
+function removeOptions(selectElement) {
+  let i, L = selectElement.options.length - 1;
+  for (i = L; i > 0; i--) {
+    selectElement.remove(i);
+  }
+}
+
+function displayMenuEp(menuE) {
+  let menuEpisode = document.getElementById('select-episode');
+  removeOptions(menuEpisode);
+  let c = 0;
+  menuE.forEach(function (menuItem) {
+    if(c===0)
+    {
+      mini = menuItem['episodeId'];
+      maxi = menuItem['episodeId'];
+    }
+    else
+    {
+      if(menuItem['episodeId']<maxi)
+      {
+        mini = menuItem['episodeId'];
+      }
+      else
+      {
+        maxi = menuItem['episodeId'];
+      }
+    }
+    c++;
+    let option = document.createElement('option');
+    option.value = menuItem['episodeId'];
+    option.textContent = menuItem['episodeId'];
+    menuEpisode.appendChild(option);
+  });
+}
+
+document.getElementById('select-season').addEventListener('change', async function (event) {
+  let selectedValue = event.target.value;
   if (selectedValue) {
-    var anchorId = 'saison' + selectedValue;
-    var maxSeason = document.getElementById('select-season').childElementCount;
+    let anchorId = 'saison' + selectedValue;
+    let maxSeason = document.getElementById('select-season').childElementCount;
     maxSeason--;
-    var max = 'saison' + maxSeason.toString();
-    var cnt = 0;
+    let max = 'saison' + maxSeason.toString();
+    let cnt = 0;
 
     try {
       const tabs = await browser.tabs.query({});
@@ -22,7 +68,6 @@ document.getElementById('select-season').addEventListener('change', async functi
         if (tab.url.includes("radiocapitaine.com")) {
           cnt++;
           if (cnt === 1) {
-            // Use executeScript to simulate a click inside the tab
             await browser.tabs.executeScript(tab.id, {
               code: `document.getElementById('menu${anchorId}').click();`
             });
@@ -41,11 +86,9 @@ document.getElementById('select-season').addEventListener('change', async functi
 });
 
 document.getElementById('select-episode').addEventListener('change', async function (event) {
-  var selectedValue = event.target.value;
-  if (selectedValue) {
- 
-
-    var cnt = 0;
+  current = event.target.value;
+  if (current) {
+    let cnt = 0;
 
     try {
       const tabs = await browser.tabs.query({});
@@ -53,82 +96,125 @@ document.getElementById('select-episode').addEventListener('change', async funct
         if (tab.url.includes("radiocapitaine.com")) {
           cnt++;
           if (cnt === 1) {
-            // Use executeScript to simulate a click inside the tab
+            let cook = getCookie('playmode');
             await browser.tabs.executeScript(tab.id, {
               code: `
-    var elements = document.getElementsByClassName('containerEmission');
-    if (elements.length > 0) {
-      var elementsArray = Array.from(elements);
-      elementsArray.forEach(function (e) {
-        console.log(e.textContent.substring(2));
-        if (${selectedValue} == e.textContent.substring(2)) {
-          e.click();
-          
-        }
-      });
-    }
-  `
+              cur = ${current};
+              max = ${maxi};
+              min = ${mini};
+              coo = ${cook};
+              function play(){
+              alert('playing');
+                elements = document.getElementsByClassName('containerEmission');
+                if (elements.length > 0) {
+                  elementsArray = Array.from(elements);
+                  elementsArray.forEach(function (e) {
+                    d = e.getElementsByClassName('infoBulle');
+                    s = d.item(0).querySelector('span');
+                    if ( cur == s.textContent.substring(2)) {
+                      e.click();
+                      desc = e.getElementsByClassName('description').item(0);
+                      audio = desc.querySelector('audio');
+                      audio.play();
+                      audio.onended = next;
+                    }
+                  });
+                }
+              }
+              function next(){
+                alert('next');
+                alert(coo);
+                switch(coo){
+                  case 'random' :
+                    alert('randomMode');
+                    cur = Math.floor(Math.random() * (max - min + 1)) + min;
+                    alert('current:'+cur.toString());
+                    
+                  break;
+                  case 'incremental' :
+                    alert('incrementalMode');
+                    if(cur == max)
+                    {
+                    //Next season
+                    }
+                    else
+                    {
+                      cur++;
+                    }
+                    alert('current:'+cur.toString());
+                    
+                  break;
+                  case 'decremental' :
+                    alert('decrementalMode');
+                    if(cur == min)
+                    {
+                    //Previous season
+                    }
+                    else
+                    {
+                      cur--;
+                    }
+                    alert('current:'+cur.toString());
+                    
+                  break;
+                  default:
+                    alert('error');
+                  break;
+                }
+                play();
+              }
+              play(); 
+              `
             });
-
-            // Send message to get menu episode
-            const activeTabs = await browser.tabs.query({ active: true, currentWindow: true });
-            const response = await browser.tabs.sendMessage(activeTabs[0].id, { action: 'getMenuEpisode' });
-            displayMenuEp(response.menuEp);
           }
         }
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error: during injection ', error);
     }
   }
 });
+document.getElementById('select-playmode').addEventListener('change', async function (event) {
+  setCookie('playmode', event.target.value, 2);
+});
 
 document.addEventListener('DOMContentLoaded', async function () {
-
   try {
     const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-    const responseMenu = await browser.tabs.sendMessage(tabs[0].id, { action: 'getMenu' });
-    displayMenu(responseMenu.menu);
+    for (const tab of tabs) {
+      if (tab.url.includes("radiocapitaine.com")) {
+        const responseMenu = await browser.tabs.sendMessage(tab.id, { action: 'getMenu' });
+        displayMenu(responseMenu.menu);
 
-    const responseMenuEp = await browser.tabs.sendMessage(tabs[0].id, { action: 'getMenuEpisode' });
-    displayMenuEp(responseMenuEp.menuEp);
+        const responseMenuEp = await browser.tabs.sendMessage(tab.id, { action: 'getMenuEpisode' });
+        displayMenuEp(responseMenuEp.menuEp);
+      }
+    }
   } catch (error) {
     console.error('Error sending or receiving getMenu/getMenuEpisode message:', error);
   }
 });
-
-function displayMenu(menu) {
-  var menuSeason = document.getElementById('select-season');
-
-  menu.forEach(function (menuItem) {
-    //if(menuItem['data-saison-id'] != 69 && menuItem['data-saison-id'] != 0)
-    //{
-      var option = document.createElement('option');
-      option.value = menuItem['data-saison-id'];
-      option.textContent = menuItem['data-saison-id'];
-      menuSeason.appendChild(option);
-      
-    //}
-    
-  });
+function setCookie(cname, cvalue, exdays) {
+  const d = new Date();
+  d.setTime(d.getTime() + (exdays*24*60*60*1000));
+  let expires = "expires="+ d.toUTCString();
+  document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+  console.log('Cookie set to '+cname + "=" + cvalue + ";" + expires + ";domain=.radiocapitaine.com;path=/")
 }
-function removeOptions(selectElement) {
-  var i, L = selectElement.options.length - 1;
-  for(i = L; i > 0; i--) {
-     selectElement.remove(i);
+function getCookie(cname) {
+  let name = cname + "=";
+  let decodedCookie = decodeURIComponent(document.cookie);
+  let ca = decodedCookie.split(';');
+  for(let i = 0; i <ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) === ' ') {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) === 0) {
+      console.log('cookieName: '+cname+' value: '+c.substring(name.length, c.length)+' from .radiocapitaine.com');
+      return c.substring(name.length, c.length);
+    }
   }
+
+  return "";
 }
-
-// using the function:
-
-  function displayMenuEp(menuE) {
-    var menuEpisode = document.getElementById('select-episode');
-    removeOptions(menuEpisode);
-    menuE.forEach(function (menuItem) {
-      //console.log('option'+menuItem['episodeId']);
-      var option = document.createElement('option');
-      option.value = menuItem['episodeId'];
-      option.textContent = menuItem['episodeId'];
-      menuEpisode.appendChild(option); 
-    });
-  }
