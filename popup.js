@@ -1,6 +1,7 @@
 let current;
 let maxi;
 let mini;
+let playmode;
 document.getElementById('GoToRadioCapitaine').addEventListener('click', function () {
   browser.runtime.sendMessage({ action: 'GoToRadioCapitaine' });
   window.close();
@@ -84,6 +85,16 @@ document.getElementById('select-season').addEventListener('change', async functi
     }
   }
 });
+async function setPlayMode(value)
+{
+  await browser.storage.local.set({playmode: value});
+  console.log('playmode: '+value);
+}
+  async function getPlayMode() {
+    const p = await browser.storage.local.get('playmode');
+    console.log(p.playmode);
+    return p.playmode;
+  }
 
 document.getElementById('select-episode').addEventListener('change', async function (event) {
   current = event.target.value;
@@ -96,75 +107,63 @@ document.getElementById('select-episode').addEventListener('change', async funct
         if (tab.url.includes("radiocapitaine.com")) {
           cnt++;
           if (cnt === 1) {
-            let cook = getCookie('playmode');
+            const plmd = await getPlayMode();
+            console.log(plmd);
+            playmode = plmd;
+            console.log('plmd: '+playmode);
+            //cooky = cooky === '' ? 'up' : cooky;
             await browser.tabs.executeScript(tab.id, {
               code: `
-              cur = ${current};
-              max = ${maxi};
-              min = ${mini};
-              coo = ${cook};
-              function play(){
-              alert('playing');
-                elements = document.getElementsByClassName('containerEmission');
-                if (elements.length > 0) {
-                  elementsArray = Array.from(elements);
-                  elementsArray.forEach(function (e) {
-                    d = e.getElementsByClassName('infoBulle');
-                    s = d.item(0).querySelector('span');
-                    if ( cur == s.textContent.substring(2)) {
-                      e.click();
-                      desc = e.getElementsByClassName('description').item(0);
-                      audio = desc.querySelector('audio');
-                      audio.play();
-                      audio.onended = next;
-                    }
-                  });
-                }
-              }
-              function next(){
-                alert('next');
-                alert(coo);
-                switch(coo){
-                  case 'random' :
-                    alert('randomMode');
-                    cur = Math.floor(Math.random() * (max - min + 1)) + min;
-                    alert('current:'+cur.toString());
-                    
-                  break;
-                  case 'incremental' :
-                    alert('incrementalMode');
-                    if(cur == max)
-                    {
-                    //Next season
-                    }
-                    else
-                    {
-                      cur++;
-                    }
-                    alert('current:'+cur.toString());
-                    
-                  break;
-                  case 'decremental' :
-                    alert('decrementalMode');
-                    if(cur == min)
-                    {
-                    //Previous season
-                    }
-                    else
-                    {
-                      cur--;
-                    }
-                    alert('current:'+cur.toString());
-                    
-                  break;
-                  default:
-                    alert('error');
-                  break;
-                }
-                play();
-              }
-              play(); 
-              `
+    cur = ${current};
+    max = ${maxi};
+    min = ${mini};
+    //cooki = "down";
+
+    //cooki = ;
+    function play() {
+      elements = document.getElementsByClassName('containerEmission');
+      if (elements.length > 0) {
+        elementsArray = Array.from(elements);
+        elementsArray.forEach(function (e) {
+          d = e.getElementsByClassName('infoBulle');
+          s = d.item(0).querySelector('span');
+          if (cur == s.textContent.substring(2)) {
+            e.click();
+            desc = e.getElementsByClassName('description').item(0);
+            audio = desc.querySelector('audio');
+            audio.play();
+            audio.onended = next;
+          }
+        });
+      }
+    }
+    function next() {
+      switch (${playmode}) {
+        case 'rand':
+          cur = Math.floor(Math.random() * (max - min + 1)) + min;
+          break;
+        case 'up':
+          if (cur == max) {
+            // Next season
+          } else {
+            cur++;
+          }
+          break;
+        case 'down':
+          if (cur == min) {
+            // Previous season
+          } else {
+            cur--;
+          }
+          break;
+        default:
+        
+          break;
+      }
+      play();
+    }
+    play(); 
+  `
             });
           }
         }
@@ -175,7 +174,7 @@ document.getElementById('select-episode').addEventListener('change', async funct
   }
 });
 document.getElementById('select-playmode').addEventListener('change', async function (event) {
-  setCookie('playmode', event.target.value, 2);
+  await setPlayMode(event.target.value);
 });
 
 document.addEventListener('DOMContentLoaded', async function () {
@@ -194,27 +193,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     console.error('Error sending or receiving getMenu/getMenuEpisode message:', error);
   }
 });
-function setCookie(cname, cvalue, exdays) {
-  const d = new Date();
-  d.setTime(d.getTime() + (exdays*24*60*60*1000));
-  let expires = "expires="+ d.toUTCString();
-  document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
-  console.log('Cookie set to '+cname + "=" + cvalue + ";" + expires + ";domain=.radiocapitaine.com;path=/")
-}
-function getCookie(cname) {
-  let name = cname + "=";
-  let decodedCookie = decodeURIComponent(document.cookie);
-  let ca = decodedCookie.split(';');
-  for(let i = 0; i <ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) === ' ') {
-      c = c.substring(1);
-    }
-    if (c.indexOf(name) === 0) {
-      console.log('cookieName: '+cname+' value: '+c.substring(name.length, c.length)+' from .radiocapitaine.com');
-      return c.substring(name.length, c.length);
-    }
-  }
 
-  return "";
-}
+
+

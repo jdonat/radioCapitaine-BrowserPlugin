@@ -11,7 +11,9 @@
     "permissions": [
         "webRequest",
         "activeTab",
-        "tabs"
+        "tabs",
+        "unlimitedStorage",
+        "storage"
     ],
     "browser_specific_settings": {
         "gecko": {
