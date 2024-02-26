@@ -92,7 +92,6 @@ async function setPlayMode(value)
 }
   async function getPlayMode() {
     const p = await browser.storage.local.get('playmode');
-    console.log(p.playmode);
     return p.playmode;
   }
 
@@ -108,18 +107,17 @@ document.getElementById('select-episode').addEventListener('change', async funct
           cnt++;
           if (cnt === 1) {
             const plmd = await getPlayMode();
-            console.log(plmd);
-            playmode = plmd;
-            console.log('plmd: '+playmode);
-            //cooky = cooky === '' ? 'up' : cooky;
+            console.log('plmd: '+plmd);
+            console.log('max: '+ maxi);
+            console.log('min: '+ mini);
+            console.log('asked: '+current);
             await browser.tabs.executeScript(tab.id, {
               code: `
     cur = ${current};
     max = ${maxi};
     min = ${mini};
-    //cooki = "down";
+    playmd = '${plmd}';
 
-    //cooki = ;
     function play() {
       elements = document.getElementsByClassName('containerEmission');
       if (elements.length > 0) {
@@ -138,7 +136,8 @@ document.getElementById('select-episode').addEventListener('change', async funct
       }
     }
     function next() {
-      switch (${playmode}) {
+      
+      switch (playmd) {
         case 'rand':
           cur = Math.floor(Math.random() * (max - min + 1)) + min;
           break;

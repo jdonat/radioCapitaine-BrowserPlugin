@@ -13,7 +13,8 @@
         "activeTab",
         "tabs",
         "unlimitedStorage",
-        "storage"
+        "storage",
+        "background"
     ],
     "browser_specific_settings": {
         "gecko": {
@@ -32,6 +33,6 @@
         "scripts": [
             "background.js"
         ],
-        "persistent": false
+        "persistent": true
     }
 }
